@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Technical Reports</title>
+  <meta name="description" content="Interactive study guide and reference for ELE123/ELE114 Technical Reports covering MS Word and Excel standards." />
+  <meta property="og:title" content="Technical Reports" />
+  <meta property="og:description" content="Interactive study guide and reference for ELE123/ELE114 Technical Reports covering MS Word and Excel standards." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#content-area">Skip to lesson content</a>
+  <!-- Top App Navigation Bar -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-section">
+        <button class="menu-toggle-btn" id="menu-toggle" aria-label="Toggle navigation menu" aria-controls="app-sidebar" aria-expanded="false">
+          ☰
+        </button>
+        <div class="brand-text">
+          <h1>Technical Reports</h1>
+          <div class="brand-subtitle">ELE123 / ELE114 · Benha University</div>
+        </div>
+      </div>
+
+      <!-- Live Search Box -->
+      <div class="header-search">
+        <div class="search-input-wrapper">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input 
+            type="search" 
+            id="search-input" 
+            class="search-input" 
+            placeholder="Search rules, paths, or topics..." 
+            aria-label="Search lessons and technical rules" 
+          />
+        </div>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="header-actions">
+        <div class="deadline-pill" title="Technical Report Final Submission">
+          <span>📅 Due: Tue 17 Nov 2026</span>
+        </div>
+        <button class="btn-icon btn-download-project" id="download-project-btn" title="Download all files in one folder on your device (.ZIP)">
+          <span>ZIP</span>
+          <span>Save to Device (.ZIP)</span>
+        </button>
+        <button class="btn-icon language-toggle" id="language-toggle" type="button" title="Switch to Egyptian Arabic" aria-label="Switch to Egyptian Arabic">
+          <span id="language-text">عربي</span>
+        </button>
+        <button class="btn-icon" id="theme-toggle" title="Toggle dark/light mode" aria-pressed="false">
+          <span id="theme-icon">🌙</span>
+          <span id="theme-text">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer Backdrop Overlay -->
+  <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+  <!-- Layout Container -->
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar" id="app-sidebar" aria-label="Course Topics">
+      <div class="sidebar-overview">
+        <div class="overview-header">
+          <span class="overview-title">Study Progress</span>
+          <span class="overview-stats" id="overall-progress-text" aria-live="polite">0/0 (0%)</span>
+        </div>
+        <div class="progress-track" role="progressbar" aria-label="Overall lesson progress" aria-valuemin="0" aria-valuemax="140" aria-valuenow="0" aria-valuetext="0 of 140 steps completed">
+          <div class="progress-fill" id="overall-progress-fill"></div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav" aria-label="Course lessons">
+        <!-- Rendered dynamically by app.js -->
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="app-content" id="content-area" tabindex="-1" aria-label="Lesson content">
+      <!-- Lesson card or welcome screen rendered by app.js -->
+    </main>
+  </div>
+
+  <footer class="site-footer"><span class="site-footer-prefix">Created by </span><strong>Marwan Abdallah</strong></footer>
+
+  <!-- Word Lessons (Lecture 3 & 4) -->
+  <script src="./lessons/w01-page-setup.js"></script>
+  <script src="./lessons/w02-cover-page.js"></script>
+  <script src="./lessons/w03-page-numbering.js"></script>
+  <script src="./lessons/w04-headers-footers.js"></script>
+  <script src="./lessons/w05-text-formatting.js"></script>
+  <script src="./lessons/w06-headings-toc.js"></script>
+  <script src="./lessons/w07-line-spacing.js"></script>
+  <script src="./lessons/w08-indentation-centering.js"></script>
+  <script src="./lessons/w09-figures.js"></script>
+  <script src="./lessons/w10-tables.js"></script>
+  <script src="./lessons/w11-tables-figures-lists.js"></script>
+  <script src="./lessons/w12-equations.js"></script>
+  <script src="./lessons/w13-citations-references.js"></script>
+  <script src="./lessons/w14-styles-themes.js"></script>
+
+  <!-- Excel & Data Lessons (Lecture 5) -->
+  <script src="./lessons/e01-entering-data-formulas.js"></script>
+  <script src="./lessons/e02-summary-statistics.js"></script>
+  <script src="./lessons/e03-chart-anatomy.js"></script>
+  <script src="./lessons/e04-column-bar-charts.js"></script>
+  <script src="./lessons/e05-pie-charts.js"></script>
+  <script src="./lessons/e06-line-charts.js"></script>
+  <script src="./lessons/e07-histograms.js"></script>
+  <script src="./lessons/e08-dot-plots.js"></script>
+  <script src="./lessons/e09-choosing-charts.js"></script>
+
+  <!-- Report Submission Audit Checklist -->
+  <script src="./lessons/r01-report-checklist.js"></script>
+
+  <!-- Interactive Lab Tasks, Data & Simulators -->
+  <script src="./challenges.js"></script>
+  <script src="./playground.js"></script>
+  <script src="./excel-simulator.js"></script>
+
+  <!-- Offline ZIP Engine & Device Downloader -->
+  <script src="./jszip.min.js"></script>
+  <script src="./downloader.js"></script>
+
+  <!-- Core Application Script -->
+  <script src="./app.js"></script>
+</body>
+</html>
