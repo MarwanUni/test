@@ -1,8 +1,0 @@
-{
-  "name": "Remix Office Skills Lab",
-  "description": "Interactive study guide and reference for ELE123/ELE114 Technical Reports covering MS Word and Excel standards.",
-  "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
-}
