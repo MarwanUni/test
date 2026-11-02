@@ -5,6 +5,58 @@
 
 // Quiz / Understanding Check questions (preserved)
 window.LESSON_CHALLENGES = {
+  "l01-introduction-technical-reports": [
+    {
+      question: "Which statement best describes a technical report?",
+      options: ["A personal diary with no intended audience", "Technical information communicated to a specific reader for a specific purpose", "A document that must contain only equations", "A collection of copied internet paragraphs"],
+      correct: 1,
+      explanation: "A technical report communicates technical information, facts, and conclusions to a specific reader for a specific purpose."
+    },
+    {
+      question: "A report for financial experts should primarily do what?",
+      options: ["Use unexplained equations and specialist terms", "Provide simple explanations and emphasize objectives, benefits, and outcomes", "Remove all results to keep it short", "Use the same detail as a specialist engineering report"],
+      correct: 1,
+      explanation: "Non-technical readers need plain explanations and are usually most interested in the overall objective, benefits, and outcomes."
+    },
+    {
+      question: "Which example follows the ethical writing guidance?",
+      options: ["The system completely eliminates all network problems.", "The result is presented without mentioning the small test sample.", "According to the source, the method achieved 95% accuracy on 50 samples; larger testing is still needed.", "A copied sentence is included without a citation."],
+      correct: 2,
+      explanation: "The ethical version cites or attributes the source, reports the condition, and states the limitation instead of overstating the result."
+    },
+    {
+      question: "What should happen before the initial draft?",
+      options: ["Choose a font and start typing unrelated paragraphs", "Define purpose and readers, research, and create an outline", "Write the conclusion with new evidence", "Copy a similar report"],
+      correct: 1,
+      explanation: "The lecture's process begins with purpose and readers, followed by research and an outline before drafting."
+    }
+  ],
+  "l02-basic-report-structure": [
+    {
+      question: "Which four questions organize a useful abstract?",
+      options: ["Who, where, when, which", "Why, how, what, so what", "What font, what margin, what color, what size", "Before, during, after, appendix"],
+      correct: 1,
+      explanation: "The abstract covers purpose (why), method (how), results (what), and conclusions or recommendations (so what)."
+    },
+    {
+      question: "Which item belongs primarily in the introduction?",
+      options: ["The full reference entry for every source", "Context, motivation, purpose, limitations, and report organization", "A new result not discussed elsewhere", "A dedication to a family member"],
+      correct: 1,
+      explanation: "The introduction establishes context and purpose, explains motivation and limitations, and previews the report organization."
+    },
+    {
+      question: "What should a conclusion avoid?",
+      options: ["Summarizing supported findings", "Explaining why the findings matter", "Introducing new material or evidence", "Mentioning the report's objectives"],
+      correct: 2,
+      explanation: "A conclusion must be based on material already presented and should not introduce new evidence, background, or claims."
+    },
+    {
+      question: "What is the relationship between an in-text citation and a reference list?",
+      options: ["They are unrelated", "The citation marks the source where it is used and the reference list gives its full details", "The reference list replaces all citations", "Citations are used only on the cover page"],
+      correct: 1,
+      explanation: "In-text citations acknowledge sources at the point of use; the reference list supplies the complete publication details."
+    }
+  ],
   "w01-page-setup": [
     {
       question: "For an engineering technical report submitted for binding, what is the minimum required left-hand margin?",

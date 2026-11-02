@@ -369,7 +369,7 @@
 
     // Group lessons by `group`
     const groups = {};
-    const groupOrder = ['Word', 'Excel & Data', 'Report'];
+    const groupOrder = ['Report', 'Word', 'Excel & Data'];
 
     filteredLessons.forEach(lesson => {
       const g = lesson.group || 'Word';
@@ -491,6 +491,8 @@
     const diagramHtml = (window.PLAYGROUNDS && window.PLAYGROUNDS.getDiagram(lesson.id)) || '';
     const playgroundWidgetHtml = (window.PLAYGROUNDS && window.PLAYGROUNDS.getPlayground(lesson.id)) || '';
     const challenges = (window.LESSON_CHALLENGES && window.LESSON_CHALLENGES[lesson.id]) || [];
+    const lessonTasks = (window.LESSON_TASKS && window.LESSON_TASKS[lesson.id]) || [];
+    const hasPlayground = Boolean(diagramHtml || playgroundWidgetHtml || lessonTasks.length > 0);
 
     // Rules
     let rulesHtml = '';
@@ -701,9 +703,11 @@
         <button class="lesson-tab-btn ${state.activeTab === 'guide' ? 'active' : ''}" data-tab="guide">
           <span>${escapeHtml(t('guide'))}</span>
         </button>
-        <button class="lesson-tab-btn ${state.activeTab === 'playground' ? 'active' : ''}" data-tab="playground">
-          <span>${escapeHtml(t('lab'))}</span>
-        </button>
+        ${hasPlayground ? `
+          <button class="lesson-tab-btn ${state.activeTab === 'playground' ? 'active' : ''}" data-tab="playground">
+            <span>${escapeHtml(t('lab'))}</span>
+          </button>
+        ` : ''}
         <button class="lesson-tab-btn ${state.activeTab === 'challenge' ? 'active' : ''}" data-tab="challenge">
           <span>${escapeHtml(t('quiz'))}</span>
           <span class="tab-badge">${challenges.length}</span>
