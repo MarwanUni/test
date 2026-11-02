@@ -35,8 +35,12 @@
     completedSteps: storage.get('completed_steps', {}),
     challengeAnswers: storage.get('challenge_answers', {}),
     notes: storage.get('notes', {}),
+    feedback: storage.get('feedback', {}),
+    trophies: storage.get('trophies', []),
+    screen: 'course',
     theme: storage.get('theme', null),
     language: storage.get('language', 'en'),
+    lessonFilter: storage.get('lesson_filter', 'all'),
     sidebarOpen: window.matchMedia('(min-width: 901px)').matches,
     mobileLayout: window.matchMedia('(max-width: 900px)').matches
   };
@@ -57,7 +61,9 @@
     searchInput: document.getElementById('search-input'),
     languageToggle: document.getElementById('language-toggle'),
     languageText: document.getElementById('language-text'),
-    downloadProjectBtn: document.getElementById('download-project-btn')
+    trophyButton: document.getElementById('trophy-button')
+    ,trophyCount: document.getElementById('trophy-count')
+    ,trophyToast: document.getElementById('trophy-toast')
   };
 
   const translations = {
@@ -87,7 +93,17 @@
       checklistReady: 'Practical Checklist Ready', checklistHint: 'Review the Study Guide checklist items and verify your Word or Excel files directly.',
       views: 'Lesson Views', guide: 'Guide', lab: 'Lab', quiz: 'Quiz', more: 'More for this lesson',
       moreHint: 'Requirements, practice, tips & notes', goal: 'Goal:', standard: 'Office 365 Standard',
-      saved: 'Saved ✓', saving: 'Saving...', languageLabel: 'Switch to Egyptian Arabic'
+      saved: 'Saved ✓', saving: 'Saving...', languageLabel: 'Switch to Egyptian Arabic',
+      filterAll: 'All', filterWord: 'Word', filterExcel: 'Excel', filterReport: 'Reports',
+      continueLearning: 'Continue learning', startLearning: 'Start learning', resume: 'Resume',
+      dashboardIntro: 'Build your technical report one focused step at a time.',
+      completedLessons: 'lessons completed', readiness: 'Submission readiness',
+      readinessHint: 'Use this final check before submitting your report.',
+      feedbackTitle: 'Was this lesson useful?', feedbackYes: 'Helpful', feedbackNo: 'Needs improvement',
+      feedbackPlaceholder: 'Optional comment about this lesson...',
+      feedbackThanks: 'Thanks for your feedback.', resetQuiz: 'Retry all questions', score: 'Score',
+      noAnswer: 'Not answered yet', resetProgress: 'Reset progress', resetProgressConfirm: 'Reset all saved progress and quiz answers?', retryIncorrect: 'Retry incorrect', percent: 'percent'
+      ,trophies: 'Trophies', unlocked: 'Unlocked', locked: 'Locked', trophyUnlocked: 'Trophy unlocked', backToCourse: 'Back to course'
     },
     ar: {
       skip: 'روح لمحتوى الدرس', search: 'دوّر على قاعدة أو خطوة أو موضوع...', searchLabel: 'ابحث في الدروس والقواعد الفنية',
@@ -115,7 +131,17 @@
       checklistReady: 'قائمة المراجعة جاهزة', checklistHint: 'راجع عناصر دليل المذاكرة واتأكد من ملفات Word أو Excel بتاعتك.',
       views: 'أقسام الدرس', guide: 'الشرح', lab: 'التطبيق', quiz: 'اختبار', more: 'تفاصيل زيادة للدرس',
       moreHint: 'المطلوب، تدريب، نصايح وملاحظات', goal: 'الهدف:', standard: 'معيار Office 365',
-      saved: 'اتحفظت ✓', saving: 'بيتحفظ...', languageLabel: 'غيّر اللغة للإنجليزي'
+      saved: 'اتحفظت ✓', saving: 'بيتحفظ...', languageLabel: 'غيّر اللغة للإنجليزي',
+      filterAll: 'الكل', filterWord: 'وورد', filterExcel: 'إكسل', filterReport: 'تقارير',
+      continueLearning: 'كمّل مذاكرتك', startLearning: 'ابدأ المذاكرة', resume: 'كمّل',
+      dashboardIntro: 'ابنِ تقريرك الفني خطوة مركزة في كل مرة.',
+      completedLessons: 'دروس مكتملة', readiness: 'جاهزية التسليم',
+      readinessHint: 'استخدم المراجعة النهائية دي قبل تسليم التقرير.',
+      feedbackTitle: 'الدرس ده كان مفيد؟', feedbackYes: 'مفيد', feedbackNo: 'محتاج تحسين',
+      feedbackPlaceholder: 'ملاحظة اختيارية عن الدرس...',
+      feedbackThanks: 'شكرًا على رأيك.', resetQuiz: 'أعد كل الأسئلة', score: 'النتيجة',
+      noAnswer: 'لسه مجاوبتش', resetProgress: 'مسح التقدم', resetProgressConfirm: 'تمسح كل التقدم وإجابات الاختبارات المحفوظة؟', retryIncorrect: 'أعد الغلط بس', percent: 'في المية'
+      ,trophies: 'الجوائز', unlocked: 'مفتوحة', locked: 'مقفولة', trophyUnlocked: 'جائزة جديدة', backToCourse: 'ارجع للكورس'
     }
   };
 
@@ -169,9 +195,7 @@
     setText('.brand-text h1', t('brand'));
     setText('.site-footer-prefix', state.language === 'ar' ? 'تنفيذ الموقع بواسطة ' : 'Created by ');
     setText('.overview-title', t('progress'));
-    setText('#download-project-btn span:last-child', t('download'));
     setText('.deadline-pill span', t('deadline'));
-    if (elements.downloadProjectBtn) elements.downloadProjectBtn.title = t('downloadTitle');
     if (elements.searchInput) {
       elements.searchInput.placeholder = t('search');
       elements.searchInput.setAttribute('aria-label', t('searchLabel'));
@@ -344,9 +368,16 @@
   function renderSidebar() {
     if (!elements.sidebarNav) return;
     const q = state.searchQuery.trim().toLowerCase();
+    const filter = state.lessonFilter;
 
     // Filter lessons if searching
     const filteredLessons = state.lessons.filter(lesson => {
+      const group = lesson.group || 'Word';
+      const matchesFilter = filter === 'all'
+        || (filter === 'word' && group === 'Word')
+        || (filter === 'excel' && group === 'Excel & Data')
+        || (filter === 'report' && group === 'Report');
+      if (!matchesFilter) return false;
       if (!q) return true;
       const matchTitle = (lesson.title || '').toLowerCase().includes(q)
         || getLessonText(lesson, 'title').toLowerCase().includes(q);
@@ -358,12 +389,28 @@
       return matchTitle || matchId || matchGoal || matchRules || matchSteps;
     });
 
+    const filterLabels = [
+      ['all', t('filterAll')], ['word', t('filterWord')],
+      ['excel', t('filterExcel')], ['report', t('filterReport')]
+    ];
+    const filterHtml = `<div class="lesson-filters" role="group" aria-label="${escapeHtml(t('topics'))}">
+      ${filterLabels.map(([value, label]) => `<button class="lesson-filter ${filter === value ? 'active' : ''}" type="button" data-filter="${value}" aria-pressed="${filter === value}">${escapeHtml(label)}</button>`).join('')}
+    </div>`;
+
     if (filteredLessons.length === 0) {
       elements.sidebarNav.innerHTML = `
+        ${filterHtml}
         <div style="padding: 1.5rem 0.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
           ${escapeHtml(t('noTopics'))} "<strong>${escapeHtml(state.searchQuery)}</strong>"
         </div>
       `;
+      elements.sidebarNav.querySelectorAll('.lesson-filter').forEach(button => {
+        button.addEventListener('click', () => {
+          state.lessonFilter = button.getAttribute('data-filter') || 'all';
+          storage.set('lesson_filter', state.lessonFilter);
+          renderSidebar();
+        });
+      });
       return;
     }
 
@@ -423,7 +470,15 @@
       html += '</ul></details>';
     });
 
-    elements.sidebarNav.innerHTML = html;
+    elements.sidebarNav.innerHTML = filterHtml + html;
+
+    elements.sidebarNav.querySelectorAll('.lesson-filter').forEach(button => {
+      button.addEventListener('click', () => {
+        state.lessonFilter = button.getAttribute('data-filter') || 'all';
+        storage.set('lesson_filter', state.lessonFilter);
+        renderSidebar();
+      });
+    });
 
     // Attach click events
     const navItems = elements.sidebarNav.querySelectorAll('.lesson-nav-item');
@@ -444,33 +499,161 @@
     });
   }
 
+  const trophyDefinitions = [
+    { id: 'first-step', icon: '★', en: ['First step', 'Complete your first study step.'], ar: ['أول خطوة', 'كمّل أول خطوة في المذاكرة.'] },
+    { id: 'quiz-master', icon: '◆', en: ['Quiz master', 'Answer every question in a lesson correctly.'], ar: ['بطل الاختبار', 'جاوب كل أسئلة درس صح.'] },
+    { id: 'lesson-complete', icon: '✦', en: ['Lesson complete', 'Complete every step in one lesson.'], ar: ['درس مكتمل', 'كمّل كل خطوات درس واحد.'] },
+    { id: 'report-ready', icon: '🏆', en: ['Report ready', 'Complete the final submission readiness check.'], ar: ['التقرير جاهز', 'كمّل مراجعة الجاهزية النهائية للتسليم.'] },
+    { id: 'word-complete', icon: 'W', en: ['Word complete', 'Complete every Word lesson.'], ar: ['وورد مكتمل', 'كمّل كل دروس وورد.'] },
+    { id: 'excel-complete', icon: 'X', en: ['Excel complete', 'Complete every Excel lesson.'], ar: ['إكسل مكتمل', 'كمّل كل دروس إكسل.'] },
+    { id: 'course-complete', icon: '★', en: ['Course complete', 'Complete every lesson in the course.'], ar: ['الكورس مكتمل', 'كمّل كل دروس الكورس.'] }
+  ];
+
+  function updateTrophyCount() {
+    const unlocked = trophyDefinitions.filter(trophy => state.trophies.includes(trophy.id)).length;
+    if (elements.trophyCount) elements.trophyCount.textContent = `${unlocked}/${trophyDefinitions.length}`;
+  }
+
+  function showTrophyToast(trophy) {
+    if (!elements.trophyToast) return;
+    const text = state.language === 'ar' ? trophy.ar[0] : trophy.en[0];
+    elements.trophyToast.innerHTML = `<span class="trophy-toast-icon">${trophy.icon}</span><span><strong>${escapeHtml(t('trophyUnlocked'))}</strong><br>${escapeHtml(text)}</span>`;
+    elements.trophyToast.hidden = false;
+    elements.trophyToast.classList.remove('show');
+    requestAnimationFrame(() => elements.trophyToast.classList.add('show'));
+    clearTimeout(showTrophyToast.timer);
+    showTrophyToast.timer = setTimeout(() => {
+      elements.trophyToast.classList.remove('show');
+      setTimeout(() => { if (elements.trophyToast) elements.trophyToast.hidden = true; }, 250);
+    }, 3500);
+  }
+
+  function unlockTrophy(id) {
+    if (state.trophies.includes(id)) return;
+    const trophy = trophyDefinitions.find(item => item.id === id);
+    if (!trophy) return;
+    state.trophies.push(id);
+    storage.set('trophies', state.trophies);
+    updateTrophyCount();
+    showTrophyToast(trophy);
+  }
+
+  function isLessonComplete(lesson) {
+    const steps = Array.isArray(lesson.steps) ? lesson.steps : [];
+    return steps.length > 0 && steps.every((_, index) => state.completedSteps[`${lesson.id}_${index}`]);
+  }
+
+  function checkCourseTrophies() {
+    const wordLessons = state.lessons.filter(lesson => lesson.group === 'Word');
+    const excelLessons = state.lessons.filter(lesson => lesson.group === 'Excel & Data');
+    if (wordLessons.length > 0 && wordLessons.every(isLessonComplete)) unlockTrophy('word-complete');
+    if (excelLessons.length > 0 && excelLessons.every(isLessonComplete)) unlockTrophy('excel-complete');
+    if (state.lessons.length > 0 && state.lessons.every(isLessonComplete)) unlockTrophy('course-complete');
+  }
+
+  function renderTrophies() {
+    state.screen = 'trophies';
+    const unlockedCount = trophyDefinitions.filter(trophy => state.trophies.includes(trophy.id)).length;
+    elements.contentArea.innerHTML = `
+      <section class="trophy-page" aria-labelledby="trophy-page-title">
+        <div class="trophy-page-header">
+          <div><p class="eyebrow">${escapeHtml(t('trophies'))}</p><h2 id="trophy-page-title">${escapeHtml(t('trophies'))}</h2><p>${unlockedCount}/${trophyDefinitions.length} ${escapeHtml(t('unlocked'))}</p></div>
+          <button class="btn-nav" id="trophy-back-button" type="button">← ${escapeHtml(t('backToCourse'))}</button>
+        </div>
+        <div class="trophy-grid">
+          ${trophyDefinitions.map(trophy => {
+            const isUnlocked = state.trophies.includes(trophy.id);
+            const copy = state.language === 'ar' ? trophy.ar : trophy.en;
+            return `<article class="trophy-card ${isUnlocked ? 'unlocked' : 'locked'}"><div class="trophy-medal" aria-hidden="true">${isUnlocked ? trophy.icon : '??'}</div><div><h3>${escapeHtml(copy[0])}</h3><p>${escapeHtml(copy[1])}</p><span class="trophy-status">${escapeHtml(isUnlocked ? t('unlocked') : t('locked'))}</span></div></article>`;
+          }).join('')}
+        </div>
+      </section>
+    `;
+    document.getElementById('trophy-back-button')?.addEventListener('click', () => {
+      state.screen = 'course';
+      const lesson = state.lessons.find(item => item.id === state.currentLessonId);
+      renderLesson(lesson || null);
+    });
+    updateTrophyCount();
+  }
+
+  function renderDashboard() {
+    const completedLessons = state.lessons.filter(lesson => {
+      const steps = Array.isArray(lesson.steps) ? lesson.steps : [];
+      return steps.length > 0 && steps.every((_, index) => state.completedSteps[`${lesson.id}_${index}`]);
+    }).length;
+    const savedLessonId = storage.get('last_active_lesson', null);
+    const savedLesson = state.lessons.find(lesson => lesson.id === savedLessonId);
+    const nextLesson = savedLesson || state.lessons.find(lesson => {
+      const steps = Array.isArray(lesson.steps) ? lesson.steps : [];
+      return steps.some((_, index) => !state.completedSteps[`${lesson.id}_${index}`]);
+    }) || state.lessons[0];
+    const readinessItems = storage.get('readiness_items', {});
+    const checks = [
+      ['format', 'A4 paper and required margins are correct'],
+      ['structure', 'Headings, contents, figures, and tables are organized'],
+      ['references', 'Citations and references are complete'],
+      ['final', 'The document has been proofread and checked']
+    ];
+    const readyCount = checks.filter(([key]) => readinessItems[key]).length;
+
+    elements.contentArea.innerHTML = `
+      <section class="dashboard" aria-labelledby="dashboard-title">
+        <div class="welcome-hero">
+          <p class="eyebrow">${escapeHtml(t('course'))} · ELE123 / ELE114</p>
+          <h2 id="dashboard-title">${escapeHtml(t('welcome'))}</h2>
+          <p>${escapeHtml(t('dashboardIntro'))}</p>
+          <div class="dashboard-actions">
+            ${nextLesson ? `<button class="btn-primary" id="dashboard-resume" type="button">${escapeHtml(savedLesson ? t('resume') : t('startLearning'))}: ${escapeHtml(getLessonText(nextLesson, 'title'))} <span aria-hidden="true">→</span></button>` : ''}
+            <button class="btn-nav" id="dashboard-reset-progress" type="button">${escapeHtml(t('resetProgress'))}</button>
+          </div>
+          <div class="dashboard-stats">
+            <div class="meta-card"><div class="meta-label">${escapeHtml(t('progress'))}</div><div class="meta-val">${completedLessons}/${state.lessons.length} ${escapeHtml(t('completedLessons'))}</div></div>
+            <div class="meta-card"><div class="meta-label">${escapeHtml(t('due'))}</div><div class="meta-val">17 Nov 2026</div></div>
+            <div class="meta-card"><div class="meta-label">${escapeHtml(t('software'))}</div><div class="meta-val">MS Word & Excel 365</div></div>
+          </div>
+        </div>
+        <section class="readiness-panel" aria-labelledby="readiness-title">
+          <div class="readiness-header"><div><h3 id="readiness-title">${escapeHtml(t('readiness'))}</h3><p>${escapeHtml(t('readinessHint'))}</p></div><strong>${readyCount}/${checks.length}</strong></div>
+          <div class="readiness-list">
+            ${checks.map(([key, label]) => `<label class="readiness-item"><input type="checkbox" class="readiness-checkbox" data-readiness="${key}" ${readinessItems[key] ? 'checked' : ''}><span>${escapeHtml(label)}</span></label>`).join('')}
+          </div>
+        </section>
+      </section>
+    `;
+
+    const resumeButton = document.getElementById('dashboard-resume');
+    if (resumeButton && nextLesson) resumeButton.addEventListener('click', () => selectLesson(nextLesson.id));
+    elements.contentArea.querySelectorAll('.readiness-checkbox').forEach(input => {
+      input.addEventListener('change', event => {
+        readinessItems[event.target.getAttribute('data-readiness')] = event.target.checked;
+        storage.set('readiness_items', readinessItems);
+        if (Object.keys(readinessItems).length >= 4 && Object.values(readinessItems).every(Boolean)) unlockTrophy('report-ready');
+        renderDashboard();
+      });
+    });
+    const resetButton = document.getElementById('dashboard-reset-progress');
+    if (resetButton) resetButton.addEventListener('click', () => {
+      if (!window.confirm(t('resetProgressConfirm'))) return;
+      state.completedSteps = {};
+      state.challengeAnswers = {};
+      state.trophies = [];
+      storage.set('completed_steps', state.completedSteps);
+      storage.set('challenge_answers', state.challengeAnswers);
+      storage.set('trophies', state.trophies);
+      storage.set('last_active_lesson', null);
+      renderSidebar();
+      renderDashboard();
+      updateOverallProgressBar();
+    });
+  }
+
   // Render Lesson Content
   function renderLesson(lesson) {
     if (!elements.contentArea) return;
 
     if (!lesson) {
-      elements.contentArea.innerHTML = `
-        <div class="welcome-hero">
-          <h2>${escapeHtml(t('welcome'))}</h2>
-          <div class="lesson-goal-box">
-            ${escapeHtml(t('welcomeHint'))}
-          </div>
-          <div class="meta-grid">
-            <div class="meta-card">
-              <div class="meta-label">${escapeHtml(t('course'))}</div>
-              <div class="meta-val">ELE123 / ELE114</div>
-            </div>
-            <div class="meta-card">
-              <div class="meta-label">${escapeHtml(t('due'))}</div>
-              <div class="meta-val">Tuesday 17 Nov 2026</div>
-            </div>
-            <div class="meta-card">
-              <div class="meta-label">${escapeHtml(t('software'))}</div>
-              <div class="meta-val">MS Word & Excel 365</div>
-            </div>
-          </div>
-        </div>
-      `;
+      renderDashboard();
       return;
     }
 
@@ -632,15 +815,19 @@
     let challengeViewHtml = '';
     if (challenges.length > 0) {
       let correctCount = 0;
+      let answeredCount = 0;
       challenges.forEach((c, idx) => {
-        if (state.challengeAnswers[`${lesson.id}_${idx}`] === c.correct) correctCount++;
+        const answer = state.challengeAnswers[`${lesson.id}_${idx}`];
+        if (typeof answer === 'number') answeredCount++;
+        if (answer === c.correct) correctCount++;
       });
+      const scorePercent = Math.round((correctCount / challenges.length) * 100);
 
       challengeViewHtml = `
         <div class="challenge-container">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
             <h3 class="section-title" style="margin:0; border:none; padding:0;">${escapeHtml(t('challenge'))}</h3>
-            <span style="font-size:0.85rem; font-weight:700; color:var(--brand-blue);">${correctCount}/${challenges.length} ${escapeHtml(t('correct'))}</span>
+            <div class="quiz-summary"><span>${escapeHtml(t('score'))}: ${correctCount}/${challenges.length} (${scorePercent}%)</span><span>${answeredCount}/${challenges.length} ${escapeHtml(t('completed'))}</span><button class="btn-toggle btn-retry-incorrect" type="button" data-lesson="${escapeHtml(lesson.id)}" ${answeredCount === 0 || correctCount === answeredCount ? 'disabled' : ''}>${escapeHtml(t('retryIncorrect'))}</button><button class="btn-toggle btn-reset-quiz" type="button" data-lesson="${escapeHtml(lesson.id)}">${escapeHtml(t('resetQuiz'))}</button></div>
           </div>
           ${challenges.map((c, qIdx) => {
             const savedAns = state.challengeAnswers[`${lesson.id}_${qIdx}`];
@@ -689,6 +876,21 @@
       `;
     }
 
+    const storedFeedback = state.feedback[lesson.id];
+    const feedbackValue = typeof storedFeedback === 'string' ? storedFeedback : storedFeedback?.choice;
+    const feedbackComment = typeof storedFeedback === 'object' ? storedFeedback.comment || '' : '';
+    const feedbackHtml = `
+      <section class="lesson-feedback" aria-labelledby="lesson-feedback-title">
+        <h3 id="lesson-feedback-title">${escapeHtml(t('feedbackTitle'))}</h3>
+        <div class="feedback-actions">
+          <button class="btn-toggle lesson-feedback-btn ${feedbackValue === 'helpful' ? 'selected' : ''}" type="button" data-feedback="helpful">${escapeHtml(t('feedbackYes'))}</button>
+          <button class="btn-toggle lesson-feedback-btn ${feedbackValue === 'needs-work' ? 'selected' : ''}" type="button" data-feedback="needs-work">${escapeHtml(t('feedbackNo'))}</button>
+        </div>
+        <textarea class="feedback-textarea" id="lesson-feedback-input" placeholder="${escapeHtml(t('feedbackPlaceholder'))}">${escapeHtml(feedbackComment)}</textarea>
+        ${feedbackValue ? `<p class="feedback-thanks" role="status">${escapeHtml(t('feedbackThanks'))}</p>` : ''}
+      </section>
+    `;
+
     // Playground View HTML - Interactive Simulator Mount
     let playgroundViewHtml = `
       <div style="display:flex; flex-direction:column; gap:1.25rem;">
@@ -732,6 +934,7 @@
             ${mistakesHtml}
             ${checkHtml}
             ${notesHtml}
+            ${feedbackHtml}
           </div>
         </details>
         <section class="guide-expected-output" aria-labelledby="guide-expected-output-title">
@@ -808,6 +1011,9 @@
 
         state.challengeAnswers[`${lid}_${qid}`] = optIdx;
         storage.set('challenge_answers', state.challengeAnswers);
+        if (challenges.length > 0 && challenges.every((challenge, index) => state.challengeAnswers[`${lid}_${index}`] === challenge.correct)) {
+          unlockTrophy('quiz-master');
+        }
         renderLesson(lesson);
       });
     });
@@ -823,6 +1029,50 @@
         renderLesson(lesson);
       });
     });
+
+    elements.contentArea.querySelectorAll('.btn-reset-quiz').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lid = btn.getAttribute('data-lesson');
+        challenges.forEach((_, index) => delete state.challengeAnswers[`${lid}_${index}`]);
+        storage.set('challenge_answers', state.challengeAnswers);
+        renderLesson(lesson);
+      });
+    });
+
+    elements.contentArea.querySelectorAll('.btn-retry-incorrect').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lid = btn.getAttribute('data-lesson');
+        challenges.forEach((challenge, index) => {
+          if (state.challengeAnswers[`${lid}_${index}`] !== challenge.correct) delete state.challengeAnswers[`${lid}_${index}`];
+        });
+        storage.set('challenge_answers', state.challengeAnswers);
+        renderLesson(lesson);
+      });
+    });
+
+    elements.contentArea.querySelectorAll('.lesson-feedback-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const existing = state.feedback[lesson.id];
+        state.feedback[lesson.id] = {
+          choice: btn.getAttribute('data-feedback'),
+          comment: typeof existing === 'object' ? existing.comment || '' : ''
+        };
+        storage.set('feedback', state.feedback);
+        renderLesson(lesson);
+      });
+    });
+
+    const feedbackInput = document.getElementById('lesson-feedback-input');
+    if (feedbackInput) {
+      feedbackInput.addEventListener('input', event => {
+        const existing = state.feedback[lesson.id];
+        state.feedback[lesson.id] = {
+          choice: typeof existing === 'object' ? existing.choice : existing || '',
+          comment: event.target.value
+        };
+        storage.set('feedback', state.feedback);
+      });
+    }
 
     // Bind step checkbox toggles (distinguishes self-marked from verified)
     const stepCheckboxes = elements.contentArea.querySelectorAll('.step-checkbox');
@@ -840,6 +1090,8 @@
           delete state.completedSteps[key];
         }
         storage.set('completed_steps', state.completedSteps);
+        if (e.target.checked) unlockTrophy('first-step');
+        checkCourseTrophies();
 
         // Update step card appearance
         const card = e.target.closest('.step-card');
@@ -876,6 +1128,7 @@
           });
         }
         const updatedPercent = totalLessonSteps > 0 ? Math.round((currentLessonDone / totalLessonSteps) * 100) : 0;
+        if (totalLessonSteps > 0 && currentLessonDone === totalLessonSteps) unlockTrophy('lesson-complete');
         const progText = document.getElementById('lesson-progress-text');
         const progFill = document.getElementById('lesson-progress-fill');
         if (progText) {
@@ -932,6 +1185,7 @@
   // Select lesson
   function selectLesson(id) {
     state.currentLessonId = id;
+    state.screen = 'course';
     state.activeTab = 'guide';
     storage.set('last_active_lesson', id);
     const lesson = state.lessons.find(l => l.id === id);
@@ -1023,6 +1277,18 @@
 
     window.addEventListener('keydown', event => {
       if (event.key === 'Escape' && state.sidebarOpen) closeSidebar();
+      const target = event.target;
+      const isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable;
+      if (isTyping) return;
+      if (event.key === '/') {
+        event.preventDefault();
+        elements.searchInput?.focus();
+      }
+      if (event.key.toLowerCase() === 'n' && state.currentLessonId) {
+        const currentIndex = state.lessons.findIndex(lesson => lesson.id === state.currentLessonId);
+        const nextLesson = state.lessons[currentIndex + 1];
+        if (nextLesson) selectLesson(nextLesson.id);
+      }
     });
 
     window.matchMedia('(max-width: 900px)').addEventListener('change', event => {
@@ -1041,16 +1307,13 @@
         applyLanguage();
         renderSidebar();
         const lesson = state.lessons.find(item => item.id === state.currentLessonId);
-        renderLesson(lesson);
+        if (state.screen === 'trophies') renderTrophies();
+        else renderLesson(lesson);
       });
     }
 
-    if (elements.downloadProjectBtn) {
-      elements.downloadProjectBtn.addEventListener('click', () => {
-        if (window.OfficeSkillsDownloader) {
-          window.OfficeSkillsDownloader.openModal();
-        }
-      });
+    if (elements.trophyButton) {
+      elements.trophyButton.addEventListener('click', renderTrophies);
     }
 
     if (elements.searchInput) {
@@ -1077,6 +1340,7 @@
 
     // Re-sync LESSONS from global if populated
     state.lessons = window.LESSONS || [];
+    updateTrophyCount();
 
     updateOverallProgressBar();
 
@@ -1089,15 +1353,13 @@
       initialLesson = hash;
     } else if (lastActive && state.lessons.some(l => l.id === lastActive)) {
       initialLesson = lastActive;
-    } else if (state.lessons.length > 0) {
-      initialLesson = state.lessons[0].id;
     }
 
     if (initialLesson) {
       selectLesson(initialLesson);
     } else {
       renderSidebar();
-      renderLesson(null);
+      renderDashboard();
     }
   }
 
@@ -1110,6 +1372,8 @@
       const key = `${lessonId}_${taskIdx}`;
       state.completedSteps[key] = 'verified';
       storage.set('completed_steps', state.completedSteps);
+      unlockTrophy('first-step');
+      checkCourseTrophies();
 
       // Live update study guide step checkbox if present in DOM
       const cb = document.getElementById(`step_${lessonId}_${taskIdx}`);

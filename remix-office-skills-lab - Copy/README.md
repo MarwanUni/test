@@ -7,10 +7,10 @@
 ## 🚀 How to Run on Your Device in One Folder
 
 ### Option 1: Instant Offline Run (No Installations Needed!)
-1. Extract this entire zip file into a folder on your computer (e.g. `Desktop/OfficeSkillsLab`).
-2. Make sure all files and subfolders (`lessons/`, `style.css`, `app.js`, etc.) remain in the same extracted folder.
+1. Copy the complete project folder to your computer (e.g. `Desktop/OfficeSkillsLab`).
+2. Make sure all files and subfolders (`lessons/`, `style.css`, `app.js`, etc.) remain in the same folder.
 3. **Double-click `index.html`** in any modern web browser (Google Chrome, Microsoft Edge, Safari, Firefox).
-4. That's it! The full interactive guide, step-by-step checklists, interactive Excel formula playground, chart analyzers, and self-quizzes work 100% offline.
+4. That's it! The full interactive guide, step-by-step checklists, Excel formula playground, chart analyzers, quizzes, trophies, and progress tracking work 100% offline.
 
 ---
 
@@ -39,8 +39,6 @@ office-skills-lab/
 ├── challenges.js                # Interactive comprehension checks & quizzes
 ├── playground.js                # Interactive Excel & formatting lab simulator
 ├── excel-simulator.js           # Interactive Mini Excel grid and formula engine
-├── downloader.js                # One-click project exporter tool
-├── jszip.min.js                 # Offline zip packaging engine
 ├── package.json                 # Project configuration
 ├── README.md                    # This guide
 ├── lessons/                     # All 24 modular study units

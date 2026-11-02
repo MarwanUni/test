@@ -45,9 +45,9 @@
         <div class="deadline-pill" title="Technical Report Final Submission">
           <span>📅 Due: Tue 17 Nov 2026</span>
         </div>
-        <button class="btn-icon btn-download-project" id="download-project-btn" title="Download all files in one folder on your device (.ZIP)">
-          <span>ZIP</span>
-          <span>Save to Device (.ZIP)</span>
+        <button class="btn-icon trophy-button" id="trophy-button" type="button" title="View trophies" aria-label="View trophies">
+          <span aria-hidden="true">🏆</span>
+          <span id="trophy-count">0/7</span>
         </button>
         <button class="btn-icon language-toggle" id="language-toggle" type="button" title="Switch to Egyptian Arabic" aria-label="Switch to Egyptian Arabic">
           <span id="language-text">عربي</span>
@@ -59,6 +59,8 @@
       </div>
     </div>
   </header>
+
+  <div class="trophy-toast" id="trophy-toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
   <!-- Mobile Drawer Backdrop Overlay -->
   <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
@@ -126,10 +128,6 @@
   <script src="./challenges.js"></script>
   <script src="./playground.js"></script>
   <script src="./excel-simulator.js"></script>
-
-  <!-- Offline ZIP Engine & Device Downloader -->
-  <script src="./jszip.min.js"></script>
-  <script src="./downloader.js"></script>
 
   <!-- Core Application Script -->
   <script src="./app.js"></script>
