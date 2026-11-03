@@ -695,6 +695,16 @@
 
     mount: function (mountEl) {
       this.mountPoint = mountEl;
+      if (!this.mountPoint.dataset.pageNumberToggleBound) {
+        this.mountPoint.addEventListener('click', event => {
+          if (!event.target.closest('#tool-insert-page-number')) return;
+          this.state.hasPageNumber = !this.state.hasPageNumber;
+          this.render();
+          this.saveSnapshot();
+          PlaygroundManager.checkCurrentTask(false);
+        });
+        this.mountPoint.dataset.pageNumberToggleBound = 'true';
+      }
       if (!this.defaultState) this.defaultState = JSON.parse(JSON.stringify(this.state));
       this.render();
       this.saveSnapshot();
@@ -772,6 +782,8 @@
       const deskScroll = previousDesk
         ? { top: previousDesk.scrollTop, left: previousDesk.scrollLeft }
         : null;
+      const previousToolbar = this.mountPoint.querySelector('#word-ribbon-toolbar');
+      const toolbarScrollLeft = previousToolbar ? previousToolbar.scrollLeft : 0;
 
       this.mountPoint.innerHTML = `
         <div class="mini-word-app" id="mini-word-app">
@@ -890,6 +902,8 @@
         nextDesk.scrollTop = deskScroll.top;
         nextDesk.scrollLeft = deskScroll.left;
       }
+      const nextToolbar = this.mountPoint.querySelector('#word-ribbon-toolbar');
+      if (nextToolbar) nextToolbar.scrollLeft = toolbarScrollLeft;
 
       this.bindRibbonEvents();
     },
@@ -1021,7 +1035,7 @@
               <div class="ribbon-group-row">
                 <button type="button" class="ribbon-btn ${s.activeZone === 'header' ? 'active' : ''}" id="tool-edit-header">Header</button>
                 <button type="button" class="ribbon-btn ${s.activeZone === 'footer' ? 'active' : ''}" id="tool-edit-footer">Footer (9 pt)</button>
-                <button type="button" class="ribbon-btn ${s.hasPageNumber ? 'active' : ''}" id="tool-insert-page-number"># Page Number</button>
+                <button type="button" class="ribbon-btn ${s.hasPageNumber ? 'active' : ''}" id="tool-insert-page-number" aria-pressed="${s.hasPageNumber ? 'true' : 'false'}"># Page Number</button>
               </div>
               <div class="ribbon-group-row">
                 <button type="button" class="ribbon-btn" id="tool-page-num-format">Format Numbers...</button>
@@ -1418,7 +1432,9 @@
                 b.setAttribute('aria-selected', isCurrent ? 'true' : 'false');
                 b.tabIndex = isCurrent ? 0 : -1;
               });
+              const toolbarScrollLeft = toolbar.scrollLeft;
               toolbar.innerHTML = this.renderActiveRibbonTab();
+              toolbar.scrollLeft = toolbarScrollLeft;
               this.bindRibbonEvents();
             } else {
               this.render();
@@ -1446,7 +1462,9 @@
               b.setAttribute('aria-selected', isCurrent ? 'true' : 'false');
               b.tabIndex = isCurrent ? 0 : -1;
             });
+            const toolbarScrollLeft = toolbar.scrollLeft;
             toolbar.innerHTML = this.renderActiveRibbonTab();
+            toolbar.scrollLeft = toolbarScrollLeft;
             this.bindRibbonEvents();
           } else {
             this.render();
