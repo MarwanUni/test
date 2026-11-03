@@ -424,12 +424,18 @@
         targetEl.classList.add('show-me-highlight');
         const prompt = document.createElement('div');
         prompt.className = 'practical-prompt';
-        prompt.innerHTML = `<strong>Did you understand this action?</strong><span>${escapeHtml(task.instruction || task.path || '')}</span><div><button type="button" class="btn-primary practical-understood">I understood</button><button type="button" class="btn-toggle practical-again">Show again</button></div>`;
+        const ar = this.isArabic();
+        prompt.innerHTML = `<strong>${ar ? 'هل فهمت الخطوة؟' : 'Did you understand this action?'}</strong><span>${escapeHtml(task.instruction || task.path || '')}</span><div><button type="button" class="btn-primary practical-continue">${ar ? 'كمّل' : 'Continue'}</button><button type="button" class="btn-toggle practical-stop">${ar ? 'قف هنا' : 'Stop here'}</button><button type="button" class="btn-toggle practical-again">${ar ? 'ورّيني تاني' : 'Show again'}</button></div>`;
         document.body.appendChild(prompt);
-        prompt.querySelector('.practical-understood').onclick = () => {
+        const finishPrompt = () => {
           prompt.remove();
           cursor.remove();
           targetEl.classList.remove('show-me-highlight');
+        };
+        prompt.querySelector('.practical-stop').onclick = finishPrompt;
+        prompt.querySelector('.practical-continue').onclick = () => {
+          finishPrompt();
+          if (this.currentTaskIndex < this.tasks.length - 1) this.loadTask(this.currentTaskIndex + 1);
         };
         prompt.querySelector('.practical-again').onclick = () => {
           prompt.remove();
