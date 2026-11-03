@@ -101,6 +101,7 @@
       loadPreview: 'Load preview',
       showPractically: 'Show me practically', understood: 'I understood', showAgain: 'Show again', guidedStep: 'Guided step', guidedPrompt: 'Did this step make sense?', guidedClose: 'Close guide', guidedNext: 'Next step', guidedDone: 'You reached the end of this lesson.', guidedPath: 'Follow this path',
       moreHint: 'Requirements, practice, tips & notes', goal: 'Goal:', standard: 'Office 365 Standard',
+      missionTitle: 'Finish this lesson from A to Z', missionIntro: 'Follow the route in order: understand the goal, complete each action, prove it in the lab, then pass the check.', missionStart: 'Start next step', missionContinue: 'Continue', missionDone: 'Lesson complete', missionGuide: 'Understand', missionLab: 'Do it in the lab', missionQuiz: 'Prove it', missionFinish: 'Ready to submit', missionSteps: 'guide steps', missionTasks: 'lab tasks', missionQuestions: 'quiz questions',
       saved: 'Saved ✓', saving: 'Saving...', languageLabel: 'Switch to Egyptian Arabic',
       filterAll: 'All', filterWord: 'Word', filterExcel: 'Excel', filterReport: 'Reports',
       continueLearning: 'Continue learning', startLearning: 'Start learning', resume: 'Resume',
@@ -144,6 +145,7 @@
       loadPreview: 'تحميل المعاينة',
       showPractically: 'ورّيني عمليًا', understood: 'فهمت', showAgain: 'ورّيني تاني', guidedStep: 'خطوة إرشادية', guidedPrompt: 'الخطوة دي كانت واضحة؟', guidedClose: 'اقفل الشرح', guidedNext: 'الخطوة التالية', guidedDone: 'وصلت لنهاية الدرس.', guidedPath: 'اتبع المسار ده',
       moreHint: 'المطلوب، تدريب، نصايح وملاحظات', goal: 'الهدف:', standard: 'معيار Office 365',
+      missionTitle: 'خلّص الدرس من الألف للياء', missionIntro: 'امشِ بالترتيب: افهم الهدف، نفّذ كل خطوة، اتأكد منها في المعمل، وبعدها حل الاختبار.', missionStart: 'ابدأ الخطوة الجاية', missionContinue: 'كمّل', missionDone: 'الدرس اكتمل', missionGuide: 'افهم', missionLab: 'نفّذ في المعمل', missionQuiz: 'اتأكد من فهمك', missionFinish: 'جاهز للتسليم', missionSteps: 'خطوات شرح', missionTasks: 'مهام معمل', missionQuestions: 'أسئلة اختبار',
       saved: 'اتحفظت ✓', saving: 'بيتحفظ...', languageLabel: 'غيّر اللغة للإنجليزي',
       filterAll: 'الكل', filterWord: 'وورد', filterExcel: 'إكسل', filterReport: 'تقارير',
       continueLearning: 'كمّل مذاكرتك', startLearning: 'ابدأ المذاكرة', resume: 'كمّل',
@@ -380,6 +382,7 @@
   // Render Sidebar
   function renderSidebar() {
     if (!elements.sidebarNav) return;
+    const sidebarScrollTop = elements.sidebar ? elements.sidebar.scrollTop : 0;
     const q = state.searchQuery.trim().toLowerCase();
     const filter = state.lessonFilter;
 
@@ -421,6 +424,7 @@
           ${escapeHtml(t('noTopics'))} "<strong>${escapeHtml(state.searchQuery)}</strong>"
         </div>
       `;
+      if (elements.sidebar) elements.sidebar.scrollTop = sidebarScrollTop;
       elements.sidebarNav.querySelectorAll('.lesson-filter').forEach(button => {
         button.addEventListener('click', () => {
           state.lessonFilter = button.getAttribute('data-filter') || 'all';
@@ -490,6 +494,7 @@
     });
 
     elements.sidebarNav.innerHTML = filterHtml + lecturesNavHtml + examNavHtml + html;
+    if (elements.sidebar) elements.sidebar.scrollTop = sidebarScrollTop;
 
     elements.sidebarNav.querySelectorAll('.lesson-filter').forEach(button => {
       button.addEventListener('click', () => {
@@ -934,6 +939,37 @@
     const lessonTasks = (window.LESSON_TASKS && window.LESSON_TASKS[lesson.id]) || [];
     const hasPlayground = Boolean(diagramHtml || playgroundWidgetHtml || lessonTasks.length > 0);
 
+    const verifiedTasks = lessonTasks.filter((_, index) => state.completedSteps[`${lesson.id}_${index}`] === 'verified').length;
+    const correctAnswers = challenges.filter((challenge, index) => state.challengeAnswers[`${lesson.id}_${index}`] === challenge.correct).length;
+    const stepsDone = totalSteps === 0 || completedCount === totalSteps;
+    const labDone = lessonTasks.length === 0 || verifiedTasks === lessonTasks.length;
+    const quizDone = challenges.length === 0 || correctAnswers === challenges.length;
+    const lessonFinished = stepsDone && labDone && quizDone;
+    let nextMissionTab = 'guide';
+    if (stepsDone && !labDone) nextMissionTab = 'playground';
+    else if (stepsDone && labDone && !quizDone) nextMissionTab = 'challenge';
+
+    const missionPhase = (number, title, detail, done, action) => `
+      <div class="mission-phase ${done ? 'is-done' : action === nextMissionTab ? 'is-next' : ''}">
+        <span class="mission-phase-number">${done ? '✓' : number}</span>
+        <div class="mission-phase-copy"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(detail)}</span></div>
+        ${action && !done ? `<button class="btn-toggle mission-action" type="button" data-mission-action="${action}">${escapeHtml(action === nextMissionTab ? t('missionContinue') : t('missionStart'))}</button>` : ''}
+      </div>`;
+    const missionHtml = `
+      <section class="mission-control" aria-labelledby="mission-title">
+        <div class="mission-header">
+          <div><p class="eyebrow">A → Z WORKFLOW</p><h3 id="mission-title">${escapeHtml(t('missionTitle'))}</h3><p>${escapeHtml(t('missionIntro'))}</p></div>
+          <strong class="mission-status ${lessonFinished ? 'complete' : ''}">${lessonFinished ? escapeHtml(t('missionDone')) : `${completedCount}/${totalSteps}`}</strong>
+        </div>
+        <div class="mission-phases">
+          ${missionPhase('1', t('missionGuide'), `${completedCount}/${totalSteps} ${t('missionSteps')}`, stepsDone, 'guide')}
+          ${missionPhase('2', t('missionLab'), `${verifiedTasks}/${lessonTasks.length} ${t('missionTasks')}`, labDone, 'playground')}
+          ${missionPhase('3', t('missionQuiz'), `${correctAnswers}/${challenges.length} ${t('missionQuestions')}`, quizDone, 'challenge')}
+          ${missionPhase('4', t('missionFinish'), lessonFinished ? t('missionDone') : t('missionStart'), lessonFinished, null)}
+        </div>
+        <button class="btn-primary mission-start-button" type="button" data-mission-action="${lessonFinished ? 'guide' : nextMissionTab}">${escapeHtml(lessonFinished ? t('missionDone') : t('missionStart'))} <span aria-hidden="true">→</span></button>
+      </section>`;
+
     // Rules
     let rulesHtml = '';
     if (Array.isArray(lesson.rules) && lesson.rules.length > 0) {
@@ -1183,6 +1219,7 @@
       activeTabBody = `${challengeViewHtml}${navButtonsHtml}`;
     } else {
       activeTabBody = `
+        ${missionHtml}
         ${stepsHtml}
         <details class="lesson-extras">
           <summary>${escapeHtml(t('more'))} <span>${escapeHtml(t('moreHint'))}</span></summary>
@@ -1247,6 +1284,28 @@
             if (sheet) sheet.scrollIntoView({ behavior: 'smooth', block: 'start' });
           });
         }
+      });
+    });
+
+    elements.contentArea.querySelectorAll('[data-mission-action]').forEach(button => {
+      button.addEventListener('click', () => {
+        const targetTab = button.getAttribute('data-mission-action');
+        if (targetTab === 'guide') {
+          const firstOpen = lesson.steps?.findIndex((_, index) => !state.completedSteps[`${lesson.id}_${index}`]);
+          const target = firstOpen >= 0 ? document.getElementById(`step_${lesson.id}_${firstOpen}`) : document.querySelector('.steps-list');
+          target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target?.focus?.();
+          return;
+        }
+        state.activeTab = targetTab;
+        renderLesson(lesson);
+        requestAnimationFrame(() => {
+          if (targetTab === 'playground' && window.PlaygroundManager) {
+            const pending = lessonTasks.findIndex((_, index) => state.completedSteps[`${lesson.id}_${index}`] !== 'verified');
+            if (pending >= 0 && typeof window.PlaygroundManager.loadTask === 'function') window.PlaygroundManager.loadTask(pending);
+          }
+          document.querySelector('.lesson-body')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
       });
     });
 
@@ -1415,6 +1474,7 @@
 
         // Update sidebar step counts
         renderSidebar();
+        if (state.activeTab === 'guide') renderLesson(lesson);
       });
     });
 
