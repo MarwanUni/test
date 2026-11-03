@@ -31,6 +31,8 @@
     lessons: window.LESSONS || [],
     currentLessonId: null,
     activeTab: 'guide',
+    midExamAnswers: storage.get('mid_exam_answers', {}),
+    lectureLayout: storage.get('lecture_layout', 'full'),
     searchQuery: '',
     completedSteps: storage.get('completed_steps', {}),
     challengeAnswers: storage.get('challenge_answers', {}),
@@ -92,6 +94,9 @@
       correct: 'Correct', correctBang: '✓ Correct!', keepMind: '✕ Keep in Mind:', retry: '🔄 Try Again',
       checklistReady: 'Practical Checklist Ready', checklistHint: 'Review the Study Guide checklist items and verify your Word or Excel files directly.',
       views: 'Lesson Views', guide: 'Guide', lab: 'Lab', quiz: 'Quiz', more: 'More for this lesson',
+      midExam: 'Mid Exam', midExamIntro: 'Simulate a 50-question midterm using the complete course question bank.',
+      lectures: 'Lectures', lecturesIntro: 'Open the official course lecture PDFs without leaving the study lab.',
+      fullView: 'Full view', splitView: 'Two columns',
       moreHint: 'Requirements, practice, tips & notes', goal: 'Goal:', standard: 'Office 365 Standard',
       saved: 'Saved ✓', saving: 'Saving...', languageLabel: 'Switch to Egyptian Arabic',
       filterAll: 'All', filterWord: 'Word', filterExcel: 'Excel', filterReport: 'Reports',
@@ -130,6 +135,9 @@
       correct: 'صح', correctBang: '✓ إجابة صح!', keepMind: '✕ خلي بالك:', retry: '🔄 جرّب تاني',
       checklistReady: 'قائمة المراجعة جاهزة', checklistHint: 'راجع عناصر دليل المذاكرة واتأكد من ملفات Word أو Excel بتاعتك.',
       views: 'أقسام الدرس', guide: 'الشرح', lab: 'التطبيق', quiz: 'اختبار', more: 'تفاصيل زيادة للدرس',
+      midExam: 'امتحان نص الترم', midExamIntro: 'حاكي امتحان نص الترم باستخدام بنك الأسئلة الكامل المكون من ٥٠ سؤال.',
+      lectures: 'المحاضرات', lecturesIntro: 'افتح ملفات محاضرات الكورس الرسمية من غير ما تخرج من المعمل.',
+      fullView: 'عرض كامل', splitView: 'عمودان',
       moreHint: 'المطلوب، تدريب، نصايح وملاحظات', goal: 'الهدف:', standard: 'معيار Office 365',
       saved: 'اتحفظت ✓', saving: 'بيتحفظ...', languageLabel: 'غيّر اللغة للإنجليزي',
       filterAll: 'الكل', filterWord: 'وورد', filterExcel: 'إكسل', filterReport: 'تقارير',
@@ -396,10 +404,14 @@
     const filterHtml = `<div class="lesson-filters" role="group" aria-label="${escapeHtml(t('topics'))}">
       ${filterLabels.map(([value, label]) => `<button class="lesson-filter ${filter === value ? 'active' : ''}" type="button" data-filter="${value}" aria-pressed="${filter === value}">${escapeHtml(label)}</button>`).join('')}
     </div>`;
+    const examNavHtml = `<button class="lesson-nav-item mid-exam-nav ${state.screen === 'mid-exam' ? 'active' : ''}" type="button" id="mid-exam-nav"><span class="lesson-nav-id">50 Q</span><span class="lesson-nav-title">${escapeHtml(t('midExam'))}</span></button>`;
+    const lecturesNavHtml = `<button class="lesson-nav-item mid-exam-nav ${state.screen === 'lectures' ? 'active' : ''}" type="button" id="lectures-nav"><span class="lesson-nav-id">PDF</span><span class="lesson-nav-title">${escapeHtml(t('lectures'))}</span></button>`;
 
     if (filteredLessons.length === 0) {
       elements.sidebarNav.innerHTML = `
         ${filterHtml}
+        ${lecturesNavHtml}
+        ${examNavHtml}
         <div style="padding: 1.5rem 0.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
           ${escapeHtml(t('noTopics'))} "<strong>${escapeHtml(state.searchQuery)}</strong>"
         </div>
@@ -411,6 +423,8 @@
           renderSidebar();
         });
       });
+      elements.sidebarNav.querySelector('#mid-exam-nav')?.addEventListener('click', renderMidExam);
+      elements.sidebarNav.querySelector('#lectures-nav')?.addEventListener('click', renderLectures);
       return;
     }
 
@@ -470,7 +484,7 @@
       html += '</ul></details>';
     });
 
-    elements.sidebarNav.innerHTML = filterHtml + html;
+    elements.sidebarNav.innerHTML = filterHtml + lecturesNavHtml + examNavHtml + html;
 
     elements.sidebarNav.querySelectorAll('.lesson-filter').forEach(button => {
       button.addEventListener('click', () => {
@@ -479,9 +493,11 @@
         renderSidebar();
       });
     });
+    elements.sidebarNav.querySelector('#mid-exam-nav')?.addEventListener('click', renderMidExam);
+    elements.sidebarNav.querySelector('#lectures-nav')?.addEventListener('click', renderLectures);
 
     // Attach click events
-    const navItems = elements.sidebarNav.querySelectorAll('.lesson-nav-item');
+    const navItems = elements.sidebarNav.querySelectorAll('a.lesson-nav-item[data-lesson-id]');
     navItems.forEach(item => {
       item.addEventListener('click', (e) => {
         e.preventDefault();
@@ -637,14 +653,160 @@
       if (!window.confirm(t('resetProgressConfirm'))) return;
       state.completedSteps = {};
       state.challengeAnswers = {};
+      state.midExamAnswers = {};
       state.trophies = [];
       storage.set('completed_steps', state.completedSteps);
       storage.set('challenge_answers', state.challengeAnswers);
+      storage.set('mid_exam_answers', state.midExamAnswers);
       storage.set('trophies', state.trophies);
       storage.set('last_active_lesson', null);
       renderSidebar();
       renderDashboard();
       updateOverallProgressBar();
+    });
+  }
+
+  function renderLectures() {
+    state.screen = 'lectures';
+    const lectures = [
+      {
+        number: '1',
+        title: 'Technical Reports: Introduction',
+        file: 'lectures/Lecture%201_Technical%20Reports.pdf'
+      },
+      {
+        number: '2',
+        title: 'Technical Reports: Basic Structure',
+        file: 'lectures/Lecture%202_Technical%20Reports.pdf'
+      },
+      {
+        number: '3',
+        title: 'Technical Reports: Foundations and Word Formatting',
+        file: 'lectures/Lecture%203_Technical%20Reports.pdf'
+      },
+      {
+        number: '4',
+        title: 'Technical Reports: Advanced Word Formatting',
+        file: 'lectures/Lecture%204_Technical%20Reports.pdf'
+      },
+      {
+        number: '5',
+        title: 'Technical Reports: Excel Data and Charts',
+        file: 'lectures/Lecture%205_Technical%20Reports.pdf'
+      }
+    ];
+
+    renderSidebar();
+    elements.contentArea.innerHTML = `
+      <section class="lecture-library" aria-labelledby="lectures-title">
+        <header class="lecture-library-header">
+          <p class="eyebrow">ELE123 / ELE114</p>
+          <div class="lecture-header-row">
+            <div>
+              <h2 id="lectures-title">${escapeHtml(t('lectures'))}</h2>
+              <p>${escapeHtml(t('lecturesIntro'))}</p>
+            </div>
+            <div class="lecture-layout-switcher" role="group" aria-label="${escapeHtml(t('lectures'))} layout">
+              <button class="btn-toggle ${state.lectureLayout === 'full' ? 'selected' : ''}" type="button" data-lecture-layout="full" aria-pressed="${state.lectureLayout === 'full'}">${escapeHtml(t('fullView'))}</button>
+              <button class="btn-toggle ${state.lectureLayout === 'split' ? 'selected' : ''}" type="button" data-lecture-layout="split" aria-pressed="${state.lectureLayout === 'split'}">${escapeHtml(t('splitView'))}</button>
+            </div>
+          </div>
+        </header>
+        <div class="lecture-grid lecture-grid-${state.lectureLayout === 'split' ? 'split' : 'full'}">
+          ${lectures.map(lecture => `
+            <article class="lecture-card">
+              <div class="lecture-card-header">
+                <div>
+                  <span class="lecture-number">Lecture ${escapeHtml(lecture.number)}</span>
+                  <h3>${escapeHtml(lecture.title)}</h3>
+                </div>
+                <span class="lecture-format">PDF</span>
+              </div>
+              <iframe class="lecture-preview" src="${lecture.file}" title="${escapeHtml(lecture.title)}" loading="lazy"></iframe>
+            </article>
+          `).join('')}
+        </div>
+      </section>
+    `;
+
+    elements.contentArea.querySelectorAll('[data-lecture-layout]').forEach(button => {
+      button.addEventListener('click', () => {
+        state.lectureLayout = button.getAttribute('data-lecture-layout') === 'split' ? 'split' : 'full';
+        storage.set('lecture_layout', state.lectureLayout);
+        renderLectures();
+      });
+    });
+  }
+
+  function getMidExamQuestions() {
+    return Object.entries(window.LESSON_CHALLENGES || {}).flatMap(([lessonId, questions]) =>
+      questions.map((question, questionIndex) => ({ ...question, lessonId, questionIndex }))
+    );
+  }
+
+  function renderMidExam() {
+    state.screen = 'mid-exam';
+    const questions = getMidExamQuestions();
+    const answeredCount = questions.filter((question, index) => typeof state.midExamAnswers[index] === 'number').length;
+    const correctCount = questions.filter((question, index) => state.midExamAnswers[index] === question.correct).length;
+    const scorePercent = questions.length ? Math.round((correctCount / questions.length) * 100) : 0;
+
+    renderSidebar();
+    elements.contentArea.innerHTML = `
+      <section class="exam-page" aria-labelledby="mid-exam-title">
+        <div class="exam-header">
+          <div>
+            <p class="eyebrow">ELE123 / ELE114</p>
+            <h2 id="mid-exam-title">${escapeHtml(t('midExam'))}</h2>
+            <p>${escapeHtml(t('midExamIntro'))}</p>
+          </div>
+          <div class="quiz-summary exam-summary">
+            <span>${escapeHtml(t('score'))}: ${correctCount}/${questions.length} (${scorePercent}%)</span>
+            <span>${answeredCount}/${questions.length} ${escapeHtml(t('completed'))}</span>
+            <button class="btn-toggle" id="reset-mid-exam" type="button">${escapeHtml(t('resetQuiz'))}</button>
+          </div>
+        </div>
+        <div class="challenge-container">
+          ${questions.map((question, index) => {
+            const savedAnswer = state.midExamAnswers[index];
+            const isAnswered = typeof savedAnswer === 'number';
+            const isCorrect = isAnswered && savedAnswer === question.correct;
+            const sourceLesson = state.lessons.find(lesson => lesson.id === question.lessonId);
+            return `
+              <article class="challenge-card" data-exam-qid="${index}">
+                <div class="exam-question-meta"><span>${escapeHtml(sourceLesson ? getLessonText(sourceLesson, 'title') : question.lessonId)}</span><strong>${question.type === 'tf' ? 'True / False' : 'MCQ'}</strong></div>
+                <div class="challenge-question">Q${index + 1}. ${escapeHtml(question.question)}</div>
+                <div class="challenge-options">
+                  ${question.options.map((option, optionIndex) => {
+                    let optionClass = '';
+                    if (isAnswered) {
+                      if (optionIndex === question.correct) optionClass = 'correct';
+                      else if (optionIndex === savedAnswer) optionClass = 'incorrect';
+                    }
+                    const letter = String.fromCharCode(65 + optionIndex);
+                    return `<button class="challenge-opt-btn ${optionClass}" data-exam-qid="${index}" data-opt="${optionIndex}" type="button" ${isAnswered ? 'disabled' : ''}><span class="challenge-opt-letter">${letter}</span><span>${escapeHtml(option)}</span></button>`;
+                  }).join('')}
+                </div>
+                ${isAnswered ? `<div class="challenge-feedback ${isCorrect ? 'feedback-banner success' : 'feedback-banner warning'}"><strong>${escapeHtml(isCorrect ? t('correctBang') : t('keepMind'))}</strong> ${escapeHtml(question.explanation)}</div>` : ''}
+              </article>
+            `;
+          }).join('')}
+        </div>
+      </section>
+    `;
+
+    elements.contentArea.querySelectorAll('.challenge-opt-btn[data-exam-qid]').forEach(button => {
+      button.addEventListener('click', event => {
+        const target = event.currentTarget;
+        state.midExamAnswers[target.getAttribute('data-exam-qid')] = Number(target.getAttribute('data-opt'));
+        storage.set('mid_exam_answers', state.midExamAnswers);
+        renderMidExam();
+      });
+    });
+    document.getElementById('reset-mid-exam')?.addEventListener('click', () => {
+      state.midExamAnswers = {};
+      storage.set('mid_exam_answers', state.midExamAnswers);
+      renderMidExam();
     });
   }
 
@@ -835,7 +997,7 @@
             const isCorrect = isAnswered && savedAns === c.correct;
             return `
               <div class="challenge-card" data-qid="${qIdx}">
-                <div class="challenge-question">Q${qIdx + 1}. ${escapeHtml(c.question)}</div>
+                <div class="challenge-question">Q${qIdx + 1}. ${escapeHtml(c.question)}${c.type === 'tf' ? '<span class="question-type">True / False</span>' : '<span class="question-type">MCQ</span>'}</div>
                 <div class="challenge-options">
                   ${c.options.map((opt, optIdx) => {
                     let optClass = '';
@@ -1308,6 +1470,8 @@
         renderSidebar();
         const lesson = state.lessons.find(item => item.id === state.currentLessonId);
         if (state.screen === 'trophies') renderTrophies();
+        else if (state.screen === 'mid-exam') renderMidExam();
+        else if (state.screen === 'lectures') renderLectures();
         else renderLesson(lesson);
       });
     }

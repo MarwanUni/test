@@ -29,6 +29,13 @@ window.LESSON_CHALLENGES = {
       options: ["Choose a font and start typing unrelated paragraphs", "Define purpose and readers, research, and create an outline", "Write the conclusion with new evidence", "Copy a similar report"],
       correct: 1,
       explanation: "The lecture's process begins with purpose and readers, followed by research and an outline before drafting."
+    },
+    {
+      type: "tf",
+      question: "A technical report should be written for a specific reader and purpose.",
+      options: ["True", "False"],
+      correct: 0,
+      explanation: "A technical report communicates technical information to a defined audience for a defined purpose."
     }
   ],
   "l02-basic-report-structure": [
@@ -55,6 +62,13 @@ window.LESSON_CHALLENGES = {
       options: ["They are unrelated", "The citation marks the source where it is used and the reference list gives its full details", "The reference list replaces all citations", "Citations are used only on the cover page"],
       correct: 1,
       explanation: "In-text citations acknowledge sources at the point of use; the reference list supplies the complete publication details."
+    },
+    {
+      type: "tf",
+      question: "A conclusion may introduce important new evidence that was not discussed in the report.",
+      options: ["True", "False"],
+      correct: 1,
+      explanation: "A conclusion should summarize and interpret supported material, not introduce new evidence or claims."
     }
   ],
   "w01-page-setup": [
@@ -69,6 +83,12 @@ window.LESSON_CHALLENGES = {
       options: ["US Letter (8.5\" × 11\")", "A4 (8.27\" × 11.69\")", "Legal", "Executive"],
       correct: 1,
       explanation: "A4 paper (210 × 297 mm) is strictly required for technical report assessment at Benha University, printed single-sided."
+    },
+    {
+      question: "Which page orientation is normally used for the main body of a technical report?",
+      options: ["Portrait", "Landscape only", "Rotated 90 degrees on every page", "Book fold"],
+      correct: 0,
+      explanation: "Portrait orientation is the normal layout for the report body; landscape can be used selectively for unusually wide tables or figures."
     }
   ],
   "w02-cover-page": [
@@ -131,6 +151,13 @@ window.LESSON_CHALLENGES = {
       options: ["Left-aligned (ragged right)", "Centered", "Fully Justified (aligned to both right and left margins)", "Right-aligned"],
       correct: 2,
       explanation: "Body text must be fully justified (Ctrl+J) to give clean, professional formal margins on both sides."
+    },
+    {
+      type: "tf",
+      question: "A report may use a different font family for every section to make the document more interesting.",
+      options: ["True", "False"],
+      correct: 1,
+      explanation: "Consistent typography improves readability and gives the technical report a professional, unified appearance."
     }
   ],
   "w06-headings-toc": [
@@ -201,6 +228,13 @@ window.LESSON_CHALLENGES = {
       options: ["Leave it completely blank", "Write 'N/A' or 'nothing'", "An em-dash (—)", "A question mark (?)"],
       correct: 2,
       explanation: "Lecture 3 rule: 'Tables summarize data in rows and columns; a dash (—) indicates no data.' Blank cells look like accidental omissions."
+    },
+    {
+      type: "tf",
+      question: "Table captions are placed above the table, while figure captions are placed below the figure.",
+      options: ["True", "False"],
+      correct: 0,
+      explanation: "This opposite caption placement is the required convention for technical reports."
     }
   ],
   "w11-tables-figures-lists": [
@@ -249,6 +283,13 @@ window.LESSON_CHALLENGES = {
       options: ["Mean, Standard Deviation, Standard Error, and Sample Size (n)", "Mode, Kurtosis, Skewness, and Minimum", "Sum, Median, Maximum, and Range", "Count, Average, Variance, and Logarithm"],
       correct: 0,
       explanation: "Lecture 5 highlights Mean, Standard Deviation, Standard Error, and Count (sample size) as the 4 primary report summary metrics."
+    },
+    {
+      type: "tf",
+      question: "The standard error describes the spread of individual measurements in exactly the same way as standard deviation.",
+      options: ["True", "False"],
+      correct: 1,
+      explanation: "Standard deviation describes measurement spread; standard error describes the uncertainty of an estimated mean."
     }
   ],
   "e03-chart-anatomy": [
@@ -305,6 +346,12 @@ window.LESSON_CHALLENGES = {
       options: ["Pie chart with 20 slices", "Dot plot", "3D clustered column", "Radar chart"],
       correct: 1,
       explanation: "For small numerical sets (n < 30) where every individual value and outlier needs inspection, a dot plot is ideal."
+    },
+    {
+      question: "Which chart is generally the clearest choice for showing how a measured value changes over time?",
+      options: ["Line chart", "Pie chart", "Table of unrelated colors", "3D doughnut chart"],
+      correct: 0,
+      explanation: "A line chart connects ordered time-series values so trends, rises, falls, and changes can be inspected clearly."
     }
   ],
   "r01-report-checklist": [
