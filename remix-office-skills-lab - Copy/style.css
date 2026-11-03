@@ -846,6 +846,67 @@ body {
   margin-top: 0.65rem;
 }
 
+.practical-cursor {
+  position: fixed;
+  z-index: 10001;
+  width: 24px;
+  height: 32px;
+  transform: translate(-3px, -3px) rotate(-18deg);
+  transition: left 0.9s cubic-bezier(0.22, 1, 0.36, 1), top 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  filter: drop-shadow(0 3px 4px rgba(15, 23, 42, 0.4));
+}
+
+.practical-cursor::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-top: 28px solid #0f172a;
+  border-right: 12px solid transparent;
+}
+
+.practical-cursor::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 3px;
+  width: 0;
+  height: 0;
+  border-top: 21px solid #fff;
+  border-right: 9px solid transparent;
+}
+
+.practical-prompt {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 10002;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: min(390px, calc(100vw - 2rem));
+  padding: 1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.28);
+  animation: modalPop 0.2s ease-out;
+}
+
+.practical-prompt span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.practical-prompt > div {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .guided-demo-backdrop {
   display: none;
   position: fixed;

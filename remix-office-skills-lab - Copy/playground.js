@@ -185,10 +185,7 @@
 
       if (showPracticallyBtn) {
         showPracticallyBtn.onclick = () => {
-          const lesson = (window.LESSONS || []).find(item => item.id === this.lessonId);
-          if (lesson && window.OfficeSkillsApp && typeof window.OfficeSkillsApp.openGuidedDemo === 'function') {
-            window.OfficeSkillsApp.openGuidedDemo(lesson, this.currentTaskIndex);
-          }
+          this.playPracticalStep();
         };
       }
 
@@ -376,6 +373,71 @@
           if (targetEl) targetEl.classList.remove('show-me-highlight');
         }, 3200);
       }
+    },
+
+    resolveShowMeTarget: function (task) {
+      let targetEl = task.showMeTarget ? document.querySelector(task.showMeTarget) : null;
+      const path = (task.path || '').toLowerCase();
+      if (!targetEl && task.app === 'word') {
+        if (path.includes('layout')) targetEl = document.querySelector('#ribbon-tab-layout');
+        else if (path.includes('insert')) targetEl = document.querySelector('#ribbon-tab-insert');
+        else if (path.includes('references')) targetEl = document.querySelector('#ribbon-tab-references');
+        else if (path.includes('view')) targetEl = document.querySelector('#ribbon-tab-view');
+        else targetEl = document.querySelector('#ribbon-tab-home');
+      }
+      if (!targetEl && task.app === 'excel') {
+        let selector = '[data-excel-tab="home"]';
+        if (path.includes('data') || path.includes('sort') || path.includes('filter') || path.includes('analysis')) selector = '[data-excel-tab="data"]';
+        else if (path.includes('insert') || path.includes('chart')) selector = '[data-excel-tab="insert"]';
+        else if (path.includes('formula') || path.includes('function')) selector = '[data-excel-tab="formulas"]';
+        else if (path.includes('cell') || path.includes('range') || path.includes('worksheet')) selector = '#excel-name-box';
+        targetEl = document.querySelector(selector);
+      }
+      return targetEl;
+    },
+
+    playPracticalStep: function () {
+      const task = this.tasks[this.currentTaskIndex];
+      const targetEl = this.resolveShowMeTarget(task);
+      if (!task || !targetEl) return this.highlightTarget();
+
+      document.querySelectorAll('.practical-cursor, .practical-prompt').forEach(el => el.remove());
+      const cursor = document.createElement('div');
+      cursor.className = 'practical-cursor';
+      cursor.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(cursor);
+      const rect = targetEl.getBoundingClientRect();
+      const startX = Math.max(24, window.innerWidth * 0.5);
+      const startY = Math.max(24, window.innerHeight * 0.45);
+      cursor.style.left = `${startX}px`;
+      cursor.style.top = `${startY}px`;
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+
+      window.setTimeout(() => {
+        const nextRect = targetEl.getBoundingClientRect();
+        cursor.style.left = `${nextRect.left + nextRect.width / 2}px`;
+        cursor.style.top = `${nextRect.top + nextRect.height / 2}px`;
+      }, 120);
+
+      window.setTimeout(() => {
+        targetEl.click();
+        targetEl.classList.add('show-me-highlight');
+        const prompt = document.createElement('div');
+        prompt.className = 'practical-prompt';
+        prompt.innerHTML = `<strong>Did you understand this action?</strong><span>${escapeHtml(task.instruction || task.path || '')}</span><div><button type="button" class="btn-primary practical-understood">I understood</button><button type="button" class="btn-toggle practical-again">Show again</button></div>`;
+        document.body.appendChild(prompt);
+        prompt.querySelector('.practical-understood').onclick = () => {
+          prompt.remove();
+          cursor.remove();
+          targetEl.classList.remove('show-me-highlight');
+        };
+        prompt.querySelector('.practical-again').onclick = () => {
+          prompt.remove();
+          cursor.remove();
+          targetEl.classList.remove('show-me-highlight');
+          this.playPracticalStep();
+        };
+      }, 1050);
     },
 
     checkCurrentTask: function (silent) {
