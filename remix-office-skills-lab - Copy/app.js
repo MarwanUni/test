@@ -33,6 +33,7 @@
     activeTab: 'guide',
     midExamAnswers: storage.get('mid_exam_answers', {}),
     lectureLayout: storage.get('lecture_layout', 'full'),
+    guidedDemo: null,
     searchQuery: '',
     completedSteps: storage.get('completed_steps', {}),
     challengeAnswers: storage.get('challenge_answers', {}),
@@ -98,6 +99,7 @@
       lectures: 'Lectures', lecturesIntro: 'Open the official course lecture PDFs without leaving the study lab.',
       fullView: 'Full view', splitView: 'Two columns',
       loadPreview: 'Load preview',
+      showPractically: 'Show me practically', understood: 'I understood', showAgain: 'Show again', guidedStep: 'Guided step', guidedPrompt: 'Did this step make sense?', guidedClose: 'Close guide', guidedNext: 'Next step', guidedDone: 'You reached the end of this lesson.', guidedPath: 'Follow this path',
       moreHint: 'Requirements, practice, tips & notes', goal: 'Goal:', standard: 'Office 365 Standard',
       saved: 'Saved ✓', saving: 'Saving...', languageLabel: 'Switch to Egyptian Arabic',
       filterAll: 'All', filterWord: 'Word', filterExcel: 'Excel', filterReport: 'Reports',
@@ -140,6 +142,7 @@
       lectures: 'المحاضرات', lecturesIntro: 'افتح ملفات محاضرات الكورس الرسمية من غير ما تخرج من المعمل.',
       fullView: 'عرض كامل', splitView: 'عمودان',
       loadPreview: 'تحميل المعاينة',
+      showPractically: 'ورّيني عمليًا', understood: 'فهمت', showAgain: 'ورّيني تاني', guidedStep: 'خطوة إرشادية', guidedPrompt: 'الخطوة دي كانت واضحة؟', guidedClose: 'اقفل الشرح', guidedNext: 'الخطوة التالية', guidedDone: 'وصلت لنهاية الدرس.', guidedPath: 'اتبع المسار ده',
       moreHint: 'المطلوب، تدريب، نصايح وملاحظات', goal: 'الهدف:', standard: 'معيار Office 365',
       saved: 'اتحفظت ✓', saving: 'بيتحفظ...', languageLabel: 'غيّر اللغة للإنجليزي',
       filterAll: 'الكل', filterWord: 'وورد', filterExcel: 'إكسل', filterReport: 'تقارير',
@@ -595,6 +598,84 @@
     updateTrophyCount();
   }
 
+  function closeGuidedDemo() {
+    if (state.guidedDemo?.timer) clearTimeout(state.guidedDemo.timer);
+    state.guidedDemo = null;
+    document.getElementById('guided-demo-modal')?.remove();
+    document.body.style.overflow = '';
+  }
+
+  function renderGuidedDemoStep() {
+    const session = state.guidedDemo;
+    if (!session) return;
+    const steps = Array.isArray(session.lesson.steps) ? session.lesson.steps : [];
+    const step = steps[session.stepIndex];
+    if (!step) return closeGuidedDemo();
+    const actions = (step.path || '').split('>').map(action => action.trim()).filter(Boolean);
+    if (actions.length === 0) actions.push(getLessonText(session.lesson, 'title'));
+    const actionIndex = Math.min(session.actionIndex, actions.length - 1);
+    const action = actions[actionIndex];
+    const guidedApp = step.app || ((session.lesson.group || '').toLowerCase().includes('excel') ? 'excel' : 'word');
+    const cursorX = 18 + (actionIndex / Math.max(actions.length - 1, 1)) * 64;
+    const cursorY = 28 + (actionIndex % 2) * 28;
+    const isLastAction = actionIndex === actions.length - 1;
+    const isLastStep = session.stepIndex === steps.length - 1;
+
+    const modal = document.getElementById('guided-demo-modal') || document.body.appendChild(document.createElement('div'));
+    modal.id = 'guided-demo-modal';
+    modal.className = 'guided-demo-backdrop is-active';
+    modal.innerHTML = `
+      <section class="guided-demo-window" role="dialog" aria-modal="true" aria-labelledby="guided-demo-title">
+        <header class="guided-demo-header">
+          <div>
+            <p class="eyebrow">${escapeHtml(t('guidedStep'))} ${session.stepIndex + 1} / ${steps.length}</p>
+            <h2 id="guided-demo-title">${escapeHtml(step.text)}</h2>
+          </div>
+          <button class="guided-demo-close" id="guided-demo-close" type="button" aria-label="${escapeHtml(t('guidedClose'))}">×</button>
+        </header>
+        <div class="guided-demo-body">
+          <div class="guided-demo-stage" aria-live="polite">
+            <div class="guided-demo-appbar"><span>${guidedApp === 'excel' ? 'Excel 365' : 'Word 365'}</span><span>□ ×</span></div>
+            <div class="guided-demo-ribbon">File&nbsp;&nbsp;&nbsp; Home&nbsp;&nbsp;&nbsp; Insert&nbsp;&nbsp;&nbsp; Layout&nbsp;&nbsp;&nbsp; Data&nbsp;&nbsp;&nbsp; References</div>
+            <div class="guided-demo-workspace"><div class="guided-demo-panel">${escapeHtml(action)}</div><div class="guided-demo-document"><span></span><span></span><span></span><span></span><span></span></div></div>
+            <div class="guided-demo-cursor" style="--cursor-x:${cursorX}%; --cursor-y:${cursorY}%;" aria-hidden="true"><span></span></div>
+          </div>
+          <div class="guided-demo-instruction"><strong>${escapeHtml(t('guidedPath'))}:</strong> ${escapeHtml(actions.join(' > '))}<p>${escapeHtml(step.text)}</p></div>
+          <div class="guided-demo-prompt">
+            <strong>${escapeHtml(t('guidedPrompt'))}</strong>
+            <div class="guided-demo-actions">
+              <button class="btn-primary" id="guided-demo-understood" type="button">${escapeHtml(isLastStep && isLastAction ? t('understood') : t('guidedNext'))}</button>
+              <button class="btn-toggle" id="guided-demo-again" type="button">${escapeHtml(t('showAgain'))}</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+
+    modal.querySelector('#guided-demo-close').addEventListener('click', closeGuidedDemo);
+    modal.querySelector('#guided-demo-again').addEventListener('click', () => {
+      session.actionIndex = actionIndex;
+      renderGuidedDemoStep();
+    });
+    modal.querySelector('#guided-demo-understood').addEventListener('click', () => {
+      if (!isLastAction) session.actionIndex += 1;
+      else if (!isLastStep) {
+        session.stepIndex += 1;
+        session.actionIndex = 0;
+      } else {
+        closeGuidedDemo();
+        return;
+      }
+      renderGuidedDemoStep();
+    });
+    document.body.style.overflow = 'hidden';
+  }
+
+  function openGuidedDemo(lesson, stepIndex) {
+    state.guidedDemo = { lesson, stepIndex, actionIndex: 0, timer: null };
+    renderGuidedDemoStep();
+  }
+
   function renderDashboard() {
     const completedLessons = state.lessons.filter(lesson => {
       const steps = Array.isArray(lesson.steps) ? lesson.steps : [];
@@ -898,6 +979,7 @@
                       ${isVerified ? `<span class="status-verified-pill" title="${escapeHtml(t('verifiedTitle'))}">${escapeHtml(t('verified'))}</span>` : isSelf ? `<span class="status-self-pill" title="${escapeHtml(t('selfMarkedTitle'))}">${escapeHtml(t('selfMarked'))}</span>` : ''}
                     </div>
                     <div class="step-text">${escapeHtml(step.text)}</div>
+                    <button class="btn-toggle show-practical-btn" type="button" data-lesson="${escapeHtml(lesson.id)}" data-step="${idx}">${escapeHtml(t('showPractically'))}</button>
                     ${renderExpectedOutputPreview(lesson, step)}
                   </div>
                 </div>
@@ -1251,6 +1333,13 @@
     }
 
     // Bind step checkbox toggles (distinguishes self-marked from verified)
+    elements.contentArea.querySelectorAll('.show-practical-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const stepIndex = Number(button.getAttribute('data-step'));
+        openGuidedDemo(lesson, stepIndex);
+      });
+    });
+
     const stepCheckboxes = elements.contentArea.querySelectorAll('.step-checkbox');
     stepCheckboxes.forEach(cb => {
       cb.addEventListener('change', (e) => {
