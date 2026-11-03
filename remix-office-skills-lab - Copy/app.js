@@ -97,6 +97,7 @@
       midExam: 'Mid Exam', midExamIntro: 'Simulate a 50-question midterm using the complete course question bank.',
       lectures: 'Lectures', lecturesIntro: 'Open the official course lecture PDFs without leaving the study lab.',
       fullView: 'Full view', splitView: 'Two columns',
+      loadPreview: 'Load preview',
       moreHint: 'Requirements, practice, tips & notes', goal: 'Goal:', standard: 'Office 365 Standard',
       saved: 'Saved ✓', saving: 'Saving...', languageLabel: 'Switch to Egyptian Arabic',
       filterAll: 'All', filterWord: 'Word', filterExcel: 'Excel', filterReport: 'Reports',
@@ -138,6 +139,7 @@
       midExam: 'امتحان نص الترم', midExamIntro: 'حاكي امتحان نص الترم باستخدام بنك الأسئلة الكامل المكون من ٥٠ سؤال.',
       lectures: 'المحاضرات', lecturesIntro: 'افتح ملفات محاضرات الكورس الرسمية من غير ما تخرج من المعمل.',
       fullView: 'عرض كامل', splitView: 'عمودان',
+      loadPreview: 'تحميل المعاينة',
       moreHint: 'المطلوب، تدريب، نصايح وملاحظات', goal: 'الهدف:', standard: 'معيار Office 365',
       saved: 'اتحفظت ✓', saving: 'بيتحفظ...', languageLabel: 'غيّر اللغة للإنجليزي',
       filterAll: 'الكل', filterWord: 'وورد', filterExcel: 'إكسل', filterReport: 'تقارير',
@@ -722,7 +724,10 @@
                 </div>
                 <span class="lecture-format">PDF</span>
               </div>
-              <iframe class="lecture-preview" src="${lecture.file}" title="${escapeHtml(lecture.title)}" loading="lazy"></iframe>
+              <div class="lecture-preview-placeholder" data-lecture-file="${lecture.file}" data-lecture-title="${escapeHtml(lecture.title)}">
+                <span>PDF</span>
+                <button class="btn-primary load-lecture-preview" type="button">${escapeHtml(t('loadPreview'))}</button>
+              </div>
             </article>
           `).join('')}
         </div>
@@ -734,6 +739,15 @@
         state.lectureLayout = button.getAttribute('data-lecture-layout') === 'split' ? 'split' : 'full';
         storage.set('lecture_layout', state.lectureLayout);
         renderLectures();
+      });
+    });
+    elements.contentArea.querySelectorAll('.load-lecture-preview').forEach(button => {
+      button.addEventListener('click', () => {
+        const placeholder = button.closest('.lecture-preview-placeholder');
+        const file = placeholder?.getAttribute('data-lecture-file');
+        const title = placeholder?.getAttribute('data-lecture-title') || 'Lecture PDF';
+        if (!placeholder || !file) return;
+        placeholder.outerHTML = `<iframe class="lecture-preview" src="${file}" title="${title}" loading="lazy"></iframe>`;
       });
     });
   }

@@ -431,7 +431,27 @@ body {
   background: var(--bg-muted);
 }
 
+.lecture-preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  height: 700px;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
 .lecture-grid-split .lecture-preview {
+  height: 480px;
+}
+
+.lecture-grid-split .lecture-preview-placeholder {
   height: 480px;
 }
 
@@ -454,7 +474,9 @@ body {
   }
 
   .lecture-preview,
-  .lecture-grid-split .lecture-preview {
+  .lecture-preview-placeholder,
+  .lecture-grid-split .lecture-preview,
+  .lecture-grid-split .lecture-preview-placeholder {
     height: 520px;
   }
 }
