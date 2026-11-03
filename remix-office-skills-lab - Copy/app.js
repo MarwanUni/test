@@ -1632,6 +1632,9 @@
 
   // Expose global interface for simulator communication and progress sync
   window.OfficeSkillsApp = {
+    openGuidedDemo: function (lesson, stepIndex) {
+      openGuidedDemo(lesson, stepIndex);
+    },
     getCompletedSteps: function () {
       return state.completedSteps;
     },

@@ -109,6 +109,7 @@
               <div class="instruction-helpers">
                 <button type="button" class="btn-helper" id="btn-toggle-hint" title="${ar ? 'إظهار أو إخفاء التلميح' : 'Show or hide the hint'}" aria-controls="task-hint-box" aria-expanded="false">💡 ${ar ? 'ورّيني تلميح' : 'Show hint'}</button>
                 <button type="button" class="btn-helper btn-show-me" id="btn-show-me" title="${ar ? 'ورّيني مكان الأداة' : 'Highlight where to click'}">🔍 ${ar ? 'ورّيني' : 'Show me'}</button>
+                <button type="button" class="btn-helper btn-show-practically" id="btn-show-practically" title="${ar ? 'اشرحلي الخطوة عمليًا' : 'Walk through this step practically'}">🎬 ${ar ? 'اشرحلي عمليًا' : 'Show practically'}</button>
               </div>
             </div>
 
@@ -142,6 +143,7 @@
       const resetBtn = document.getElementById('btn-task-reset');
       const hintBtn = document.getElementById('btn-toggle-hint');
       const showMeBtn = document.getElementById('btn-show-me');
+      const showPracticallyBtn = document.getElementById('btn-show-practically');
       const stayBtn = document.getElementById('btn-advance-stay');
       const chipsContainer = document.getElementById('task-chips-container');
 
@@ -178,6 +180,15 @@
       if (showMeBtn) {
         showMeBtn.onclick = () => {
           this.highlightTarget();
+        };
+      }
+
+      if (showPracticallyBtn) {
+        showPracticallyBtn.onclick = () => {
+          const lesson = (window.LESSONS || []).find(item => item.id === this.lessonId);
+          if (lesson && window.OfficeSkillsApp && typeof window.OfficeSkillsApp.openGuidedDemo === 'function') {
+            window.OfficeSkillsApp.openGuidedDemo(lesson, this.currentTaskIndex);
+          }
         };
       }
 
