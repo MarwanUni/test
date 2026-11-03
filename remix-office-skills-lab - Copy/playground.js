@@ -30,6 +30,7 @@
     lessonId: null,
     currentTaskIndex: 0,
     tasks: [],
+    simulatorInitialized: false,
     autoAdvanceTimer: null,
     highlightTimer: null,
     isAdvancing: false,
@@ -46,6 +47,7 @@
       this.container = containerEl;
       this.lessonId = lessonId;
       this.currentTaskIndex = 0;
+      this.simulatorInitialized = false;
       this.autoAdvanceTimer = null;
       this.highlightTimer = null;
       this.isAdvancing = false;
@@ -266,11 +268,15 @@
       // Mount or re-use appropriate simulator
       this.ensureSimulator(task);
 
-      // Initialize simulator to task's startState
-      if (task.app === 'word' && window.MiniWord) {
-        window.MiniWord.loadState(task.startState);
-      } else if (task.app === 'excel' && window.MiniExcel) {
-        window.MiniExcel.activateLesson(this.lessonId, task.startState);
+      // Keep the simulated document intact while moving between instructions.
+      // Real Word does not create a new document when the user changes steps.
+      if (!this.simulatorInitialized) {
+        if (task.app === 'word' && window.MiniWord) {
+          window.MiniWord.loadState(task.startState);
+        } else if (task.app === 'excel' && window.MiniExcel) {
+          window.MiniExcel.activateLesson(this.lessonId, task.startState);
+        }
+        this.simulatorInitialized = true;
       }
 
       // Run initial check
@@ -953,9 +959,9 @@
                 <button type="button" class="ribbon-btn ${s.alignment === 'justify' ? 'active' : ''}" id="tool-align-justify" title="Justify (Ctrl+J)">≣ Justify</button>
               </div>
               <div class="ribbon-group-row">
-                <button type="button" class="ribbon-btn" id="tool-bullets" title="Bullets">• List</button>
-                <button type="button" class="ribbon-btn" id="tool-numbering" title="Numbering">1. Numbering</button>
-                <button type="button" class="ribbon-btn" id="tool-multilevel-list" title="Multilevel Headings List">1.1 List</button>
+                <button type="button" class="ribbon-btn ${s.hasBullets ? 'active' : ''}" id="tool-bullets" title="Bullets" aria-pressed="${s.hasBullets ? 'true' : 'false'}">• List</button>
+                <button type="button" class="ribbon-btn ${s.hasNumbering ? 'active' : ''}" id="tool-numbering" title="Numbering" aria-pressed="${s.hasNumbering ? 'true' : 'false'}">1. Numbering</button>
+                <button type="button" class="ribbon-btn ${s.multilevelNumbering ? 'active' : ''}" id="tool-multilevel-list" title="Multilevel Headings List" aria-pressed="${s.multilevelNumbering ? 'true' : 'false'}">1.1 List</button>
                 <select class="ribbon-select select-narrow" id="tool-line-spacing" title="Line Spacing">
                   <option value="1.0" ${s.lineSpacing === 1.0 ? 'selected' : ''}>1.0</option>
                   <option value="1.15" ${s.lineSpacing === 1.15 ? 'selected' : ''}>1.15</option>
@@ -991,7 +997,7 @@
                   <span class="style-name">Title</span>
                   <span class="style-preview">24 pt Bold</span>
                 </button>
-                <button type="button" class="ribbon-btn" id="tool-styles-pane" title="Open Styles Task Pane">Styles ↘</button>
+                <button type="button" class="ribbon-btn ${s.stylesPaneOpen ? 'active' : ''}" id="tool-styles-pane" title="Open Styles Task Pane" aria-pressed="${s.stylesPaneOpen ? 'true' : 'false'}">Styles ↘</button>
                 <label class="style-size-control">H1 <select class="ribbon-select select-narrow" id="tool-heading1-size" aria-label="Heading 1 font size"><option value="12" ${s.heading1Size === 12 ? 'selected' : ''}>12 pt</option><option value="14" ${s.heading1Size === 14 ? 'selected' : ''}>14 pt</option><option value="16" ${s.heading1Size === 16 ? 'selected' : ''}>16 pt</option><option value="18" ${s.heading1Size === 18 ? 'selected' : ''}>18 pt</option></select></label>
                 <label class="style-size-control">H2 <select class="ribbon-select select-narrow" id="tool-heading2-size" aria-label="Heading 2 font size"><option value="12" ${s.heading2Size === 12 ? 'selected' : ''}>12 pt</option><option value="14" ${s.heading2Size === 14 ? 'selected' : ''}>14 pt</option><option value="16" ${s.heading2Size === 16 ? 'selected' : ''}>16 pt</option><option value="18" ${s.heading2Size === 18 ? 'selected' : ''}>18 pt</option></select></label>
                 <label class="style-size-control">H3 <select class="ribbon-select select-narrow" id="tool-heading3-size" aria-label="Heading 3 font size"><option value="10" ${s.heading3Size === 10 ? 'selected' : ''}>10 pt</option><option value="12" ${s.heading3Size === 12 ? 'selected' : ''}>12 pt</option><option value="14" ${s.heading3Size === 14 ? 'selected' : ''}>14 pt</option><option value="16" ${s.heading3Size === 16 ? 'selected' : ''}>16 pt</option></select></label>
@@ -1625,7 +1631,7 @@
             }
       if (bulletsBtn) {
         bulletsBtn.onclick = () => {
-          s.hasBullets = true;
+          s.hasBullets = !s.hasBullets;
           this.render();
           this.saveSnapshot();
           PlaygroundManager.checkCurrentTask(false);
@@ -1636,7 +1642,7 @@
       const multiBtn = document.getElementById('tool-multilevel-list');
       if (multiBtn) {
         multiBtn.onclick = () => {
-          s.multilevelNumbering = true;
+          s.multilevelNumbering = !s.multilevelNumbering;
           this.render();
           this.saveSnapshot();
           PlaygroundManager.checkCurrentTask(false);
@@ -1728,12 +1734,14 @@
       const stylesPaneBtn = document.getElementById('tool-styles-pane');
       if (stylesPaneBtn) {
         stylesPaneBtn.onclick = () => {
-          s.stylesPaneOpen = true;
-          s.styleBasedOnNone = true;
-          s.customStyleCreated = true;
+          s.stylesPaneOpen = !s.stylesPaneOpen;
+          if (s.stylesPaneOpen) {
+            s.styleBasedOnNone = true;
+            s.customStyleCreated = true;
+          }
+          this.render();
           this.saveSnapshot();
           PlaygroundManager.checkCurrentTask(false);
-          alert('Styles Task Pane Opened: Heading 1 (16 pt bold), Heading 2 (14 pt bold). Custom styles configured with (no style) parent.');
         };
       }
 
